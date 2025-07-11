@@ -2,53 +2,21 @@
 
 A powerful Streamlit web application that enhances OCR-extracted text from documents stored in AWS S3. This tool uses AWS Textract for OCR and AI-powered text enhancement to fix spelling mistakes, correct OCR errors, and improve text readability.
 
-## 🔔 **Important: Automatic Processing Setup**
+## 🔔 **Important:In future we need to implemet Automatic Processing Setup**
 
 > **⚡ For automatic document processing when files are uploaded to S3, you need to configure S3 Event Notifications with AWS EventBridge or direct Lambda triggers. This enables real-time processing without manual intervention.**
 >
-> **Setup Options:**
-> - **Option A:** S3 → EventBridge → Lambda (recommended for complex workflows)
-> - **Option B:** S3 → Lambda (direct trigger for simple processing)
-> - **Option C:** Manual processing via this Streamlit interface
+
+> - **Future Architecture:** S3 → EventBridge → Lambda (recommended for complex workflows)
+
 >
 > See the [AWS Integration Setup](#aws-integration-setup) section below for detailed configuration instructions.
 
-## ✨ Features
 
-### 🔍 **Document Management**
-- Browse documents stored in AWS S3
-- Support for PDF and image files (JPG, PNG)
-- Real-time file listing with metadata
-- Document preview with high-quality rendering
-
-### 🧠 **AI-Powered Text Enhancement**
-- OCR text extraction using AWS Textract
-- AI-powered spelling and grammar correction
-- OCR error detection and fixing
-- Text formatting improvements
-- Low-temperature AI processing for accuracy
-
-### 🤖 **Automatic Processing**
-- Real-time document processing via S3 events
-- EventBridge integration for complex workflows
-- Scalable batch processing capabilities
-- Webhook notifications for completed jobs
-
-### 📊 **Detailed Analysis**
-- Side-by-side original vs enhanced text comparison
-- Detailed change tracking with categories
-- Color-coded correction types
-- Comprehensive enhancement summary
-- Original text preservation for reference
-
-### 💾 **Export & Download**
-- Download enhanced text as .txt files
-- Formatted output for easy reading
-- Batch processing capabilities
 
 ## 🔄 Processing Workflows
 
-### Automatic Processing (S3 + EventBridge/Lambda)
+### Automatic Processing (S3 + EventBridge/Lambda) Future only will implemet soon
 
 ```mermaid
 graph LR
@@ -67,7 +35,7 @@ graph LR
 - ✅ Scalable for high volumes
 - ✅ Cost-effective for batch processing
 
-### Manual Processing (Streamlit Interface)
+### Manual Processing (Streamlit Interface) Current 
 
 ```mermaid
 graph LR
@@ -150,39 +118,8 @@ The application will open in your browser at `http://localhost:8501`
 
 ## 🔧 AWS Integration Setup
 
-### Option A: S3 → EventBridge → Lambda (Recommended)
 
-**Step 1: Enable EventBridge on S3 Bucket**
-```bash
-aws s3api put-bucket-notification-configuration \
-  --bucket your-bucket-name \
-  --notification-configuration '{
-    "EventBridgeConfiguration": {}
-  }'
-```
-
-**Step 2: Create EventBridge Rule**
-```bash
-aws events put-rule \
-  --name ocr-processing-rule \
-  --event-pattern '{
-    "source": ["aws.s3"],
-    "detail-type": ["Object Created"],
-    "detail": {
-      "bucket": {"name": ["your-bucket-name"]},
-      "object": {"key": [{"prefix": "pytextract/"}]}
-    }
-  }'
-```
-
-**Step 3: Add Lambda Target**
-```bash
-aws events put-targets \
-  --rule ocr-processing-rule \
-  --targets "Id"="1","Arn"="arn:aws:lambda:region:account:function:your-function-name"
-```
-
-### Option B: S3 → Lambda Direct Trigger
+###  S3 → Lambda Direct Trigger
 
 **Configure S3 Event Notification:**
 ```bash
@@ -215,13 +152,7 @@ aws lambda add-permission \
   --statement-id s3-trigger-permission
 ```
 
-### Option C: Manual Processing
 
-Use this Streamlit interface for:
-- Testing and validation
-- One-off document processing
-- Interactive enhancement workflows
-- Quality review of automated results
 
 ## 🔧 AWS Setup
 
@@ -275,41 +206,10 @@ Use this Streamlit interface for:
 }
 ```
 
-**For EventBridge Integration:**
-```json
-{
-    "Version": "2012-10-17", 
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "events:PutRule",
-                "events:PutTargets",
-                "events:DescribeRule",
-                "lambda:AddPermission"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
+
 ```
 
-### Monitoring Automatic Processing
 
-**CloudWatch Logs:**
-- Monitor Lambda function execution
-- Track processing success/failure rates
-- Debug OCR and enhancement issues
-
-**EventBridge Metrics:**
-- Rule invocation counts
-- Failed event processing
-- Event pattern matching statistics
-
-**S3 CloudTrail:**
-- Track document uploads
-- Monitor access patterns
-- Audit processing workflows
 
 ### S3 Bucket Structure
 
@@ -354,31 +254,6 @@ your-s3-bucket/
 - Overall enhancement summary
 - Original OCR text (expandable)
 - Processing statistics
-
-## 📱 Usage Guide
-
-### Step 1: Select Document
-1. View available documents in the sidebar
-2. Click on a document to select it
-3. Review file details (size, date)
-
-### Step 2: Enhance Text
-1. Click the "✨ Enhance Text" button
-2. Wait for processing (progress indicator shown)
-3. View results in the main area
-
-### Step 3: Review Results
-1. Compare original document (left) with enhanced text (right)
-2. Review detailed changes in the bottom section
-3. Read the enhancement summary
-
-### Step 4: Download Results
-1. Click "💾 Download Enhanced Text"
-2. Save the improved text as a .txt file
-3. Use the enhanced text in your workflow
-
-## 🛠️ Technical Details
-
 ### Dependencies
 
 - **streamlit**: Web application framework
@@ -428,34 +303,6 @@ The application integrates with a Lambda function that:
 }
 ```
 
-## 🔍 Troubleshooting
-
-### Common Issues
-
-**"No files found in pytextract folder"**
-- ✅ Check S3 bucket name in configuration
-- ✅ Verify folder path exists
-- ✅ Ensure AWS credentials have S3 read permissions
-
-**"Error listing S3 files"**
-- ✅ Verify AWS credentials are configured
-- ✅ Check IAM permissions for S3 access
-- ✅ Ensure bucket exists and is accessible
-
-**"API Error" when enhancing**
-- ✅ Verify Lambda API URL is correct
-- ✅ Check Lambda function is deployed and running
-- ✅ Ensure API Gateway is properly configured
-
-**"PDF display error"**
-- ✅ Install PyMuPDF: `pip install PyMuPDF`
-- ✅ Some complex PDFs may not render properly
-- ✅ Try converting PDF to image format
-
-**"Request timed out"**
-- ✅ Document may be too large (>10MB limit)
-- ✅ Complex documents take longer to process
-- ✅ Check Lambda function timeout settings
 
 ### Debug Mode
 
