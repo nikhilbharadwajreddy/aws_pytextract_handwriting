@@ -2,6 +2,17 @@
 
 A powerful Streamlit web application that enhances OCR-extracted text from documents stored in AWS S3. This tool uses AWS Textract for OCR and AI-powered text enhancement to fix spelling mistakes, correct OCR errors, and improve text readability.
 
+## 🔔 **Important: Automatic Processing Setup**
+
+> **⚡ For automatic document processing when files are uploaded to S3, you need to configure S3 Event Notifications with AWS EventBridge or direct Lambda triggers. This enables real-time processing without manual intervention.**
+>
+> **Setup Options:**
+> - **Option A:** S3 → EventBridge → Lambda (recommended for complex workflows)
+> - **Option B:** S3 → Lambda (direct trigger for simple processing)
+> - **Option C:** Manual processing via this Streamlit interface
+>
+> See the [AWS Integration Setup](#aws-integration-setup) section below for detailed configuration instructions.
+
 ## ✨ Features
 
 ### 🔍 **Document Management**
@@ -17,6 +28,12 @@ A powerful Streamlit web application that enhances OCR-extracted text from docum
 - Text formatting improvements
 - Low-temperature AI processing for accuracy
 
+### 🤖 **Automatic Processing**
+- Real-time document processing via S3 events
+- EventBridge integration for complex workflows
+- Scalable batch processing capabilities
+- Webhook notifications for completed jobs
+
 ### 📊 **Detailed Analysis**
 - Side-by-side original vs enhanced text comparison
 - Detailed change tracking with categories
@@ -28,6 +45,44 @@ A powerful Streamlit web application that enhances OCR-extracted text from docum
 - Download enhanced text as .txt files
 - Formatted output for easy reading
 - Batch processing capabilities
+
+## 🔄 Processing Workflows
+
+### Automatic Processing (S3 + EventBridge/Lambda)
+
+```mermaid
+graph LR
+    A[Upload Document] --> B[S3 Bucket]
+    B --> C[EventBridge/Direct Trigger]
+    C --> D[Lambda Function]
+    D --> E[Textract OCR]
+    D --> F[AI Enhancement]
+    D --> G[Store Results]
+    G --> H[Notification/Webhook]
+```
+
+**Benefits:**
+- ✅ Real-time processing
+- ✅ No manual intervention required
+- ✅ Scalable for high volumes
+- ✅ Cost-effective for batch processing
+
+### Manual Processing (Streamlit Interface)
+
+```mermaid
+graph LR
+    A[Browse Documents] --> B[Select File]
+    B --> C[Click Enhance]
+    C --> D[API Call]
+    D --> E[View Results]
+    E --> F[Download Enhanced Text]
+```
+
+**Benefits:**
+- ✅ Interactive review and validation
+- ✅ Quality control and testing
+- ✅ Selective processing
+- ✅ User-friendly interface
 
 ## 🚀 Quick Start
 
@@ -93,6 +148,81 @@ streamlit run app.py
 
 The application will open in your browser at `http://localhost:8501`
 
+## 🔧 AWS Integration Setup
+
+### Option A: S3 → EventBridge → Lambda (Recommended)
+
+**Step 1: Enable EventBridge on S3 Bucket**
+```bash
+aws s3api put-bucket-notification-configuration \
+  --bucket your-bucket-name \
+  --notification-configuration '{
+    "EventBridgeConfiguration": {}
+  }'
+```
+
+**Step 2: Create EventBridge Rule**
+```bash
+aws events put-rule \
+  --name ocr-processing-rule \
+  --event-pattern '{
+    "source": ["aws.s3"],
+    "detail-type": ["Object Created"],
+    "detail": {
+      "bucket": {"name": ["your-bucket-name"]},
+      "object": {"key": [{"prefix": "pytextract/"}]}
+    }
+  }'
+```
+
+**Step 3: Add Lambda Target**
+```bash
+aws events put-targets \
+  --rule ocr-processing-rule \
+  --targets "Id"="1","Arn"="arn:aws:lambda:region:account:function:your-function-name"
+```
+
+### Option B: S3 → Lambda Direct Trigger
+
+**Configure S3 Event Notification:**
+```bash
+aws s3api put-bucket-notification-configuration \
+  --bucket your-bucket-name \
+  --notification-configuration '{
+    "LambdaConfigurations": [{
+      "Id": "ocr-trigger",
+      "LambdaFunctionArn": "arn:aws:lambda:region:account:function:your-function-name",
+      "Events": ["s3:ObjectCreated:*"],
+      "Filter": {
+        "Key": {
+          "FilterRules": [{
+            "Name": "prefix",
+            "Value": "pytextract/"
+          }]
+        }
+      }
+    }]
+  }'
+```
+
+**Add Lambda Permission:**
+```bash
+aws lambda add-permission \
+  --function-name your-function-name \
+  --principal s3.amazonaws.com \
+  --action lambda:InvokeFunction \
+  --source-arn arn:aws:s3:::your-bucket-name \
+  --statement-id s3-trigger-permission
+```
+
+### Option C: Manual Processing
+
+Use this Streamlit interface for:
+- Testing and validation
+- One-off document processing
+- Interactive enhancement workflows
+- Quality review of automated results
+
 ## 🔧 AWS Setup
 
 ### Required AWS Services
@@ -104,8 +234,7 @@ The application will open in your browser at `http://localhost:8501`
 
 ### IAM Permissions
 
-Your AWS user/role needs the following permissions:
-
+**For Streamlit App (S3 Access):**
 ```json
 {
     "Version": "2012-10-17",
@@ -124,6 +253,63 @@ Your AWS user/role needs the following permissions:
     ]
 }
 ```
+
+**For Lambda Function (Full Processing):**
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "textract:DetectDocumentText",
+                "bedrock:InvokeModel",
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+**For EventBridge Integration:**
+```json
+{
+    "Version": "2012-10-17", 
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "events:PutRule",
+                "events:PutTargets",
+                "events:DescribeRule",
+                "lambda:AddPermission"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+### Monitoring Automatic Processing
+
+**CloudWatch Logs:**
+- Monitor Lambda function execution
+- Track processing success/failure rates
+- Debug OCR and enhancement issues
+
+**EventBridge Metrics:**
+- Rule invocation counts
+- Failed event processing
+- Event pattern matching statistics
+
+**S3 CloudTrail:**
+- Track document uploads
+- Monitor access patterns
+- Audit processing workflows
 
 ### S3 Bucket Structure
 
@@ -291,36 +477,9 @@ ocr-enhancement-tool/
 └── .gitignore            # Git ignore file (optional)
 ```
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License. See LICENSE file for details.
-
-## 🆘 Support
 
 For issues and questions:
 1. Check the troubleshooting section above
 2. Review AWS service limits and quotas
 3. Verify all configuration settings
 4. Test with a simple document first
-
-## 🔮 Future Enhancements
-
-- [ ] Batch processing multiple documents
-- [ ] Support for additional file formats
-- [ ] Advanced text formatting options
-- [ ] Integration with more AI models
-- [ ] Export to various formats (Word, PDF)
-- [ ] User authentication and access control
-- [ ] Document history and versioning
-
----
-
-**Made with ❤️ using Streamlit and AWS services**
