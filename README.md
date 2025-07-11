@@ -16,7 +16,7 @@ A powerful Streamlit web application that enhances OCR-extracted text from docum
 
 ## 🔄 Processing Workflows
 
-### Automatic Processing (S3 + EventBridge/Lambda) Future only will implemet soon
+### Automatic Processing (S3 + EventBridge/Lambda) Will implement soon
 
 ```mermaid
 graph LR
@@ -35,7 +35,7 @@ graph LR
 - ✅ Scalable for high volumes
 - ✅ Cost-effective for batch processing
 
-### Manual Processing (Streamlit Interface) Current 
+### Manual Processing (Streamlit Interface) Current Workflow
 
 ```mermaid
 graph LR
@@ -206,8 +206,6 @@ aws lambda add-permission \
 }
 ```
 
-
-```
 
 
 
