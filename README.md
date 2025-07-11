@@ -1,0 +1,1 @@
+# aws_pytextract_handwriting
